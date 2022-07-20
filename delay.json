@@ -1,0 +1,33 @@
+{
+  "BlockType" : "Delay",
+  "BlockPath" : "simulink/Discrete/Delay",
+  "Inputs" : [
+    {
+      "Name" : "u",
+      "Multiplicity" : ["scalar", "vector"],
+      "Domain" : ["T_float", "T_int", "T_string", "T_bool"]
+    },
+    {
+      "Name" : "d",
+      "Multiplicity" : "scalar",
+      "Domain" : ["T_float", "T_int"],
+      "Requires" : "[PD__DelayLengthSource] = \"Input port\""
+    }
+  ],
+  "Output" :
+    {
+      "Multiplicity" : "<u>",
+      "Domain" : "<u>"
+    },
+  "Parameters" : [
+    {
+      "Name" : "DelayLengthSource",
+      "Domain" : ["Dialog", "Input port"]
+    },
+    {
+      "Name" : "DelayLength",
+      "Domain" : "T_uint",
+      "Requires" : "[PD__DelayLengthSource] = \"Dialog\""
+    }
+  ]
+}
