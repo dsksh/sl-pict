@@ -343,7 +343,7 @@ fprintf('\t%g', ts{1}.Time(1:3));
 fprintf('\n');
 
 for i = 1:length(spec.Output)
-    fprintf('in(%d):', i);
+    fprintf('out(%d):', i);
     fprintf('\t%g', ts{i}.Data(1:3));
     fprintf('\n');
 end
