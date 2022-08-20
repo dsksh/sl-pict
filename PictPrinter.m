@@ -12,11 +12,6 @@ classdef PictPrinter
 properties
     Fid;
     Conf;
-    NumValuesFloat;
-    NumValuesInt;
-    NumValuesUint;
-    NumValuesString;
-    NumValuesBool;
     MaxNumValues;
 end
 
@@ -28,12 +23,8 @@ methods
         obj.Fid = [];
 
         obj.Conf = conf;
-        obj.NumValuesFloat = length(conf.ValuesFloat);
-        obj.NumValuesInt = length(conf.ValuesInt);
-        obj.NumValuesUint = length(conf.ValuesUint);
-        obj.NumValuesString = length(conf.ValuesString);
-        obj.NumValuesBool = length(conf.ValuesBool);
-        obj.MaxNumValues = max([obj.NumValuesFloat, obj.NumValuesInt, obj.NumValuesString, obj.NumValuesString]) + 1;    
+        % TODO
+        obj.MaxNumValues = max([length(conf.ValuesFloat), length(conf.ValuesUint), length(conf.ValuesInt)]) + 1;    
     end
 
     function pr(obj, varargin)
@@ -115,7 +106,7 @@ methods
         end
         for j = 1:numVs
             obj.pr('%sV%d_%s: ', pfx, j, nm);
-            if item.IsOptional
+            if item.IsOptional || j > 1
                 k0 = 0;
             else
                 k0 = 1;
@@ -137,11 +128,16 @@ methods
             obj.pr('[%sM__%s] = [%sM__%s];\n', pfx, nm, md{1}, md{2});
         end
         if ~isempty(dd)
-            obj.pr('[%sD__%s] = [%sD__%s];\n', pfx, nm, md{1}, md{2});
+            % TODO
+            obj.pr('[%sD__%s] = [%sD__%s];\n', pfx, nm, dd{1}, dd{2});
         end
 
         if item.IsOptional
             obj.pr('IF %s THEN [%sD__%s] <> "Disabled" ELSE [%sD__%s] = "Disabled";\n', item.Requires, pfx, nm, pfx, nm);
+        end
+
+        if isfield(item, 'Constraint') && ~isempty(item.Constraint)
+            obj.pr('%s;\n', item.Constraint);
         end
     end
 
@@ -161,21 +157,32 @@ methods
             end
 
             if obj.isFloat(ds)
-                obj.pr('IF [%sD__%s] = "T_float"  THEN [%sV%d_%s] <= %d;\n', pfx, nm, pfx, j, nm, obj.NumValuesFloat);
+                obj.pr('IF [%sD__%s] = "T_float"  THEN [%sV%d_%s] <= %d;\n', pfx, nm, pfx, j, nm, length(obj.Conf.ValuesFloat));
             end
             if obj.isInt(ds)
-                obj.pr('IF [%sD__%s] = "T_int"    THEN [%sV%d_%s] <= %d;\n', pfx, nm, pfx, j, nm, obj.NumValuesInt);
-                obj.pr('IF [%sD__%s] = "T_uint"    THEN [%sV%d_%s] <= %d;\n', pfx, nm, pfx, j, nm, obj.NumValuesUint);
+                obj.pr('IF [%sD__%s] = "T_int"    THEN [%sV%d_%s] <= %d;\n', pfx, nm, pfx, j, nm, length(obj.Conf.ValuesInt));
+                obj.pr('IF [%sD__%s] = "T_uint"   THEN [%sV%d_%s] <= %d;\n', pfx, nm, pfx, j, nm, length(obj.Conf.ValuesUint));
             end
             if obj.isString(ds)
-                obj.pr('IF [%sD__%s] = "T_string" THEN [%sV%d_%s] <= %d;\n', pfx, nm, pfx, j, nm, obj.NumValuesString);
+                obj.pr('IF [%sD__%s] = "T_string" THEN [%sV%d_%s] <= %d;\n', pfx, nm, pfx, j, nm, length(obj.Conf.ValuesString));
             end
             if obj.isBool(ds)
-                obj.pr('IF [%sD__%s] = "T_bool"   THEN [%sV%d_%s] <= %d;\n', pfx, nm, pfx, j, nm, obj.NumValuesBool);
+                obj.pr('IF [%sD__%s] = "T_bool"   THEN [%sV%d_%s] <= %d;\n', pfx, nm, pfx, j, nm, length(obj.Conf.ValuesBool));
             end
 
-            if j > 2 && obj.isScalar(ms)
-                obj.pr('IF [%sM__%s] = "scalar"  THEN [%sV%d_%s] = 0;\n', pfx, nm, pfx, j, nm);
+            if PictPrinter.contains(ds, 'T_scalar');
+                obj.pr('IF [%sD__%s] = "T_scalar"   THEN [%sV%d_%s] <= %d;\n', pfx, nm, pfx, j, nm, length(obj.Conf.ValuesScalar));
+            end
+
+            if PictPrinter.contains(ds, 'T_signs1');
+                obj.pr('IF [%sD__%s] = "T_signs1"   THEN [%sV%d_%s] <= %d;\n', pfx, nm, pfx, j, nm, length(obj.Conf.ValuesSigns1));
+            end
+            if PictPrinter.contains(ds, 'T_signs2');
+                obj.pr('IF [%sD__%s] = "T_signs2"   THEN [%sV%d_%s] <= %d;\n', pfx, nm, pfx, j, nm, length(obj.Conf.ValuesSigns2));
+            end
+
+            if j > 1 % && obj.isScalar(ms)
+                obj.pr('IF [%sM__%s] = "scalar"  THEN [%sV%d_%s] = 0 ELSE [%sV%d_%s] > 0;\n', pfx, nm, pfx, j, nm, pfx, j, nm);
             end
         end
     end

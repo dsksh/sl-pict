@@ -9,12 +9,16 @@
 %
 
 specFilename = 'delay.json';
+%specFilename = 'sum1.json';
+%specFilename = 'sum2.json';
 
 pictCommand = './pict';
-pictFilename = 'delay_pict.txt';
+pictFilename = 'pict_in.txt';
 pictResFilename = 'pict_out.txt';
 
 %
+
+% TODO: The types specification can be schematized.
 
 conf = struct();
 conf.VectorDim = 3;
@@ -24,11 +28,18 @@ conf.TypeInt = 'int8';
 conf.TypeUint = 'uint8';
 conf.TypeString = 'string';
 conf.TypeBool = 'boolean';
-conf.ValuesFloat = {realmin('double'), -10.1, -1.1, 0, 1.1, 2.3, realmax('double')};
+conf.TypeScalar = 'double';
+conf.TypeSigns1 = 'string';
+conf.TypeSigns2 = 'string';
+conf.ValuesFloat = {-realmax('single'), -10.1, -1.1, 0, 1.1, 2.3, realmax('double')};
 conf.ValuesUint = {0, 1, 2, intmax('int8')};
 conf.ValuesInt = {intmin('int8'), -10, -1, 0, 1, 2, intmax('int8')};
 conf.ValuesString = {'', 'foo'};
 conf.ValuesBool = {false, true};
+conf.ValuesScalar = conf.ValuesFloat;
+conf.ValuesScalar{end+1} = {'[ ]'};
+conf.ValuesSigns1 = {'+', '-'};
+conf.ValuesSigns2 = {'++', '--', '+|-'};
 
 %
 
@@ -44,11 +55,17 @@ pr.print(fid, spec);
 fclose(fid);
 
 %
+% Run PICT.
+%
 
-[st, cout] = system(sprintf('%s %s 2> /dev/null', pictCommand, pictFilename));
+[st, cout] = system(sprintf('%s %s /r 2> /dev/null', pictCommand, pictFilename));
 if st
     error('error in the PICT process');
 end
+
+%
+% Parse the PICT output.
+%
 
 cout = split(cout, newline);
 %{
@@ -114,23 +131,51 @@ for j = 1:length(td0)
 end
 
 %
+% Generate a test model.
+%
 
-modelName = 'testModel';
+sDate = datestr(now, '_yyyymmddTHHMMSS');
+modelName = ['testModel_' sDate];
 testUnitName = sprintf('Test Unit (copied from %s)', modelName);
 sbName = 'Inputs';
 
 new_system(modelName);
 open_system(modelName);
 
-b = add_block('simulink/Discrete/Delay', [modelName '/Target']);
+set_param(modelName, 'SolverName', 'FixedStepDiscrete');
+set_param(modelName, 'FixedStep', '0.1');
+
+b = add_block(spec.BlockPath, [modelName '/Target']);
 set(b, 'Position', [120 80 150 110]);
 
 its = spec.Param;
 for it = its
-    if isempty(it.V)
+    if isempty(it.V) || str2double(it.V{1}) == 0
         set(b, it.Name, it.DV);
     else
-        set(b, it.Name, it.V{1});
+        % TODO: case of vector?
+        vi = str2double(it.V{1});
+        switch it.DV
+            case 'T_float'
+                vs = sprintf('%g', conf.ValuesFloat{vi});
+            case 'T_int'
+                vs = sprintf('%d', conf.ValuesInt{vi});
+            case 'T_uint'
+                vs = sprintf('%d', conf.ValuesUint{vi});
+            case 'T_string'
+                vs = conf.ValuesString{vi};
+            case 'T_bool'
+                vs = sprintf('%d', conf.ValuesBool{vi});
+            case 'T_scalar'
+                vs = sprintf('%f', conf.ValuesScalar{vi});
+            case 'T_signs1'
+                vs = conf.ValuesSigns1{vi};
+            case 'T_signs2'
+                vs = conf.ValuesSigns2{vi};
+            otherwise
+                error('unexpected branch');
+        end
+        set(b, it.Name, vs);
     end
 end
 
@@ -161,6 +206,8 @@ for it = its
             ty = conf.TypeString;
         case 'T_bool'
             ty = conf.TypeBool;
+        case 'T_scalar'
+            ty = conf.TypeScalar;
         otherwise
             ty = it.DV;
     end
@@ -202,6 +249,8 @@ for it = its
             ty = conf.TypeString;
         case 'T_bool'
             ty = conf.TypeBool;
+        case 'T_scalar'
+            ty = conf.TypeScalar;
         otherwise
             ty = it.DV;
     end
@@ -216,6 +265,8 @@ for it = its
     i = i + 1;
 end
 
+%
+% Make a harness model.
 %
 
 ho = sldvharnessopts();
@@ -248,6 +299,10 @@ for it = its
 
     for j = 1:conf.VectorSize
         vi = str2double(it.V{j});
+        if j > 1 && vi == 0
+            continue
+        end
+
         switch it.DV
             case 'T_float'
                 v = conf.ValuesFloat{vi};
@@ -259,6 +314,12 @@ for it = its
                 v = conf.ValuesString{vi};
             case 'T_bool'
                 v = conf.ValuesBool{vi};
+            case 'T_scalar'
+                v = conf.ValuesScalar{vi};
+            case 'T_signs1'
+                v = conf.ValuesSigns1{vi};
+            case 'T_signs2'
+                v = conf.ValuesSigns2{vi};
             otherwise
                 error('unexpected branch');
         end

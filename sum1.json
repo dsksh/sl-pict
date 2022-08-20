@@ -1,0 +1,56 @@
+{
+  "BlockType" : "Sum",
+  "BlockPath" : "simulink/Math Operations/Sum",
+  "Inputs" : [
+    {
+      "Name" : "Port_1",
+      "Multiplicity" : "vector",
+      "Domain" : ["T_float", "T_int", "T_string", "T_bool"]
+    }
+  ],
+  "Output" :
+    {
+      "Multiplicity" : "scalar",
+      "Domain" : "<Port_1>"
+    },
+  "Parameters" : [
+    {
+      "Name" : "Inputs",
+      "Domain" : "T_signs1"
+    },
+    {
+      "Name" : "CollapseMode",
+      "Domain" : ["All dimensions"],
+      "Commented Requires" : "[PD__Inputs] = \"+\" || [PD__Inputs] = \"-\"",
+      "Comment" : "This parameter cannot be Disabled."
+    },
+    {
+      "Name" : "InputSameDT",
+      "Domain" : ["off", "on"]
+    },
+    {
+      "Name" : "OutMin",
+      "Domain" : "<Port_1>",
+      "Comment" : "Domain can also be \"[ ]\""
+    },
+    {
+      "Name" : "OutMax",
+      "Domain" : "<Port_1>",
+      "Comment" : "Domain can also be \"[ ]\"",
+      "Constraint" : "[PV1_OutMin] <= [PV1_OutMax]",
+      "Comment1" : "Referring \"PV1_*\" is confusing"
+    }
+  ],
+  "Commented Parameters" : [
+    {
+      "Name" : "CollapseDim",
+      "Domain" : ["T_int", "T_uint"],
+      "Commented Requires" : "[PD__CollapseMode] = \"Specified dimension\"",
+      "Comment" : "This parameter cannot be Disabled."
+    },
+    {
+      "Name" : "OutDataTypeStr",
+      "Domain" : "T_dts"
+    }
+  ]
+}
